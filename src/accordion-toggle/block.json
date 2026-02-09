@@ -1,0 +1,66 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "asuspended/accordion-toggle",
+  "version": "1.0.0",
+  "title": "Accordion Toggle",
+  "category": "design",
+  "icon": "button",
+  "description": "The clickable heading area of an accordion item.",
+  "parent": [ "asuspended/accordion-item" ],
+  "supports": {
+    "html": false,
+    "color": {
+      "background": true,
+      "text": true,
+      "gradients": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontWeight": true,
+      "__experimentalFontStyle": true,
+      "__experimentalTextTransform": true,
+      "__experimentalLetterSpacing": true
+    },
+    "spacing": {
+      "padding": true,
+      "margin": true
+    },
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true
+    },
+    "className": true
+  },
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "default": ""
+    },
+    "headingTag": {
+      "type": "string",
+      "default": "h3"
+    },
+    "iconPosition": {
+      "type": "string",
+      "default": ""
+    },
+    "customIcon": {
+      "type": "string",
+      "default": ""
+    },
+    "customIconId": {
+      "type": "number",
+      "default": 0
+    },
+    "iconRotation": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "textdomain": "advanced-accordion"
+}

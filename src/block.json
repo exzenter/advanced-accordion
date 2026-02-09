@@ -1,0 +1,87 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "asuspended/advanced-accordion",
+  "version": "1.0.1",
+  "title": "Advanced Accordion",
+  "category": "design",
+  "icon": "list-view",
+  "description": "An advanced accordion container with linked groups, animation controls, and full accessibility.",
+  "keywords": [
+    "accordion",
+    "faq",
+    "toggle",
+    "collapse",
+    "expand"
+  ],
+  "supports": {
+    "align": [
+      "wide",
+      "full"
+    ],
+    "html": false,
+    "anchor": true,
+    "color": {
+      "background": true,
+      "text": false,
+      "gradients": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "className": true
+  },
+  "attributes": {
+    "autoClose": {
+      "type": "boolean",
+      "default": false
+    },
+    "allowMultipleOpen": {
+      "type": "boolean",
+      "default": true
+    },
+    "animationDuration": {
+      "type": "number",
+      "default": 0.4
+    },
+    "animationEasing": {
+      "type": "string",
+      "default": "ease"
+    },
+    "customEasing": {
+      "type": "string",
+      "default": ""
+    },
+    "contentFade": {
+      "type": "boolean",
+      "default": true
+    },
+    "contentFadeDuration": {
+      "type": "number",
+      "default": 0.3
+    },
+    "contentSlideDistance": {
+      "type": "number",
+      "default": 10
+    },
+    "staggerDelay": {
+      "type": "number",
+      "default": 0
+    },
+    "iconPosition": {
+      "type": "string",
+      "default": "right"
+    },
+    "iconRotation": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "textdomain": "advanced-accordion",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
+}

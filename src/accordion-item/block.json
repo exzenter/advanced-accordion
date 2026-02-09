@@ -1,0 +1,90 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "asuspended/accordion-item",
+  "version": "1.0.0",
+  "title": "Accordion Item",
+  "category": "design",
+  "icon": "arrow-down-alt2",
+  "description": "A single collapsible accordion item with toggle and content areas.",
+  "parent": [ "asuspended/advanced-accordion" ],
+  "supports": {
+    "html": false,
+    "anchor": true,
+    "color": {
+      "background": true,
+      "text": true,
+      "gradients": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true
+    },
+    "className": true,
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true
+    }
+  },
+  "attributes": {
+    "openByDefault": {
+      "type": "boolean",
+      "default": false
+    },
+    "linkGroupId": {
+      "type": "string",
+      "default": ""
+    },
+    "overrideAnimationDuration": {
+      "type": "boolean",
+      "default": false
+    },
+    "animationDuration": {
+      "type": "number",
+      "default": 0.4
+    },
+    "overrideAnimationEasing": {
+      "type": "boolean",
+      "default": false
+    },
+    "animationEasing": {
+      "type": "string",
+      "default": "ease"
+    },
+    "customEasing": {
+      "type": "string",
+      "default": ""
+    },
+    "overrideContentFade": {
+      "type": "boolean",
+      "default": false
+    },
+    "contentFade": {
+      "type": "boolean",
+      "default": true
+    },
+    "contentFadeDuration": {
+      "type": "number",
+      "default": 0.3
+    },
+    "contentSlideDistance": {
+      "type": "number",
+      "default": 10
+    },
+    "staggerDelay": {
+      "type": "number",
+      "default": 0
+    },
+    "customClassName": {
+      "type": "string",
+      "default": ""
+    },
+    "itemId": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "textdomain": "advanced-accordion"
+}

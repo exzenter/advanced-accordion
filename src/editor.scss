@@ -1,0 +1,132 @@
+/**
+ * Advanced Accordion – Editor-only Styles
+ *
+ * These styles are only loaded inside the WordPress block editor.
+ * They provide visual cues for linked groups, placeholders, and
+ * make the editing experience more intuitive.
+ */
+
+/* ================================================================
+ * Container – Editor
+ * ================================================================ */
+
+.wp-block-advanced-accordion {
+	border: 1px dashed #ccc;
+	border-radius: 4px;
+	padding: 4px;
+
+	&.is-selected,
+	&.has-child-selected {
+		border-color: #007cba;
+	}
+}
+
+/* ================================================================
+ * Item – Editor
+ * ================================================================ */
+
+.wp-block-accordion-item {
+	position: relative;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	margin-bottom: 8px;
+	background: #fff;
+
+	&.is-selected {
+		border-color: #007cba;
+		box-shadow: 0 0 0 1px #007cba;
+	}
+}
+
+/* ── Link Group Badge ────────────────────────────────────────────── */
+
+.aa-link-badge {
+	position: absolute;
+	top: -10px;
+	right: 12px;
+	z-index: 10;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #fff;
+	background: #007cba;
+	border-radius: 3px;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.has-link-group {
+	border-color: #007cba;
+	border-style: dashed;
+}
+
+/* ================================================================
+ * Toggle – Editor
+ * ================================================================ */
+
+.wp-block-accordion-toggle {
+	cursor: pointer;
+
+	.aa-toggle-heading {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 12px 16px;
+	}
+
+	.aa-toggle-text {
+		flex: 1;
+	}
+
+	.aa-toggle-icon {
+		opacity: 0.5;
+	}
+}
+
+/* ================================================================
+ * Content – Editor (always visible for editing)
+ * ================================================================ */
+
+.editor-styles-wrapper .wp-block-accordion-content,
+.wp-block-accordion-content {
+	max-height: none !important;
+	overflow: visible !important;
+	visibility: visible !important;
+	pointer-events: auto !important;
+	padding: 0 16px 16px;
+	border-top: 1px dashed #eee;
+
+	&[hidden] {
+		display: block !important;
+		visibility: visible !important;
+	}
+}
+
+/* ================================================================
+ * Appender Button
+ * ================================================================ */
+
+.aa-appender-wrapper {
+	padding: 8px;
+	text-align: center;
+}
+
+.aa-appender-button {
+	display: inline-block;
+	padding: 8px 16px;
+	border: 1px dashed #007cba;
+	border-radius: 4px;
+	background: transparent;
+	color: #007cba;
+	font-size: 13px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+
+	&:hover {
+		background-color: rgba(0, 124, 186, 0.05);
+	}
+}
