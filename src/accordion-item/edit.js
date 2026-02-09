@@ -22,10 +22,10 @@ import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 
 const TEMPLATE = [
-	[ 'asuspended/accordion-toggle', { heading: 'Accordion Item' } ],
+	[ 'asuspended/accordion-toggle', { heading: 'Accordion Item', lock: { move: true, remove: true } } ],
 	[
 		'asuspended/accordion-content',
-		{},
+		{ lock: { move: true, remove: true } },
 		[ [ 'core/paragraph', { placeholder: 'Add content here…' } ] ],
 	],
 ];
@@ -126,7 +126,7 @@ export default function ItemEdit( { attributes, setAttributes, clientId } ) {
 		{
 			allowedBlocks: ALLOWED_BLOCKS,
 			template: TEMPLATE,
-			templateLock: 'all',
+			templateLock: false,
 		}
 	);
 

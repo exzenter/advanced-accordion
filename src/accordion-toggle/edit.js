@@ -160,7 +160,7 @@ export default function ToggleEdit( { attributes, setAttributes } ) {
 				</PanelBody>
 			</InspectorControls>
 
-			<div { ...blockProps } role="button" tabIndex="0">
+			<div { ...blockProps }>
 				<HeadingTag className="aa-toggle-heading">
 					{ showIcon && isLeft && iconMarkup }
 					<RichText

@@ -93,16 +93,16 @@
 
 .editor-styles-wrapper .wp-block-accordion-content,
 .wp-block-accordion-content {
-	max-height: none !important;
-	overflow: visible !important;
-	visibility: visible !important;
-	pointer-events: auto !important;
+	max-height: none ;
+	overflow: visible ;
+	visibility: visible ;
+	pointer-events: auto ;
 	padding: 0 16px 16px;
 	border-top: 1px dashed #eee;
 
 	&[hidden] {
-		display: block !important;
-		visibility: visible !important;
+		display: block ;
+		visibility: visible ;
 	}
 }
 

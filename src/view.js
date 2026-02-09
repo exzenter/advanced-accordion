@@ -77,6 +77,11 @@
 				)
 			);
 
+			// Store listener references for cleanup
+			this._listeners = new Map();
+			this._keydownHandler = null;
+			this._resizeObserver = null;
+
 			this._init();
 		}
 
@@ -86,9 +91,8 @@
 			this.items.forEach((item) => this._initItem(item));
 
 			// Keyboard navigation across toggle buttons in this container.
-			this.container.addEventListener('keydown', (e) =>
-				this._handleKeyboard(e)
-			);
+			this._keydownHandler = (e) => this._handleKeyboard(e);
+			this.container.addEventListener('keydown', this._keydownHandler);
 
 			// Recalculate open heights on resize.
 			this._resizeObserver = new ResizeObserver(() =>
@@ -111,8 +115,13 @@
 				item.getAttribute('data-item-id') ||
 				`aa-${Math.random().toString(36).slice(2, 10)}`;
 
-			content.id = `${id}-content`;
-			toggle.setAttribute('aria-controls', content.id);
+			const toggleId = `${id}-toggle`;
+			const contentId = `${id}-content`;
+
+			toggle.id = toggleId;
+			content.id = contentId;
+			toggle.setAttribute('aria-controls', contentId);
+			content.setAttribute('aria-labelledby', toggleId);
 
 			const openDefault = dataBool(item, 'open-default');
 
@@ -126,9 +135,10 @@
 			}
 
 			// Click handler.
-			toggle.addEventListener('click', () =>
-				this._toggle(item)
-			);
+			const clickHandler = () => this._toggle(item);
+			toggle.addEventListener('click', clickHandler);
+			// Store for cleanup
+			this._listeners.set(toggle, clickHandler);
 		}
 
 		/* ── Resolve animation settings for an item ───────────── */
@@ -195,247 +205,224 @@
 		/* ── Open an item ─────────────────────────────────────── */
 
 		_openItem(item, instant = false) {
-			console.group('🟢 OPEN ITEM');
-			const startTime = performance.now();
-
 			const toggle = item.querySelector('.aa-toggle-button');
 			const content = item.querySelector('.wp-block-accordion-content');
-			if (!toggle || !content) {
-				console.warn('Missing toggle or content');
-				console.groupEnd();
-				return;
-			}
+			if (!toggle || !content) return;
 
 			const s = this._getSettings(item);
 			const dur = instant ? 0 : s.duration;
-			console.log('⚙️ Settings:', s);
-			console.log(`⏱️  Duration: ${dur}s, instant: ${instant}`);
-
-			// DEBUG: Log computed values
-			const computed = window.getComputedStyle(content);
-			console.log(`🔍 Computed Opacity: ${computed.opacity}`);
-			console.log(`🔍 Computed Transition: ${computed.transition}`);
 
 			item.classList.add('is-open');
-
 			toggle.setAttribute('aria-expanded', 'true');
 			content.hidden = false;
 
-			// Strict CSS class toggle to enforce no-fade
+			// Toggle CSS class for no-fade mode
 			if (!s.contentFade) {
 				content.classList.add('aa-no-fade');
 			} else {
 				content.classList.remove('aa-no-fade');
 			}
 
-			// Set CSS custom properties on the item for fine-grained control.
+			// Set CSS custom properties for animations
 			item.style.setProperty('--aa-duration', `${dur}s`);
 			item.style.setProperty('--aa-easing', s.easing);
 
-			// Prepare children based on contentFade setting
-			const children = Array.from(content.children);
-			console.log(`👶 Found ${children.length} children`);
-
+			// Only manipulate children if fade is enabled
 			if (s.contentFade && !instant) {
-				console.log('✨ ContentFade ON - preparing children');
-				// Prepare children for fade-in BEFORE height animation starts
+				const children = Array.from(content.children);
 				children.forEach((child) => {
 					child.style.opacity = '0';
 					child.style.transform = `translateY(${s.slideDistance}px)`;
 				});
-			} else {
-				console.log('🚫 ContentFade OFF - removing transitions');
-				// Remove all transitions to prevent flickering
-				children.forEach((child) => {
-					child.style.transition = 'none';
-					child.style.opacity = '1';
-					child.style.transform = 'none';
-				});
 			}
 
-			// 1. MEASURE PRECISE TARGET HEIGHT
-			// Unlock height momentarily to get the exact pixel size the content needs.
+			// Measure target height
 			content.style.transition = 'none';
 			content.style.maxHeight = 'none';
-			content.style.overflow = 'hidden'; // Keep context consistent
-			const targetHeight = content.offsetHeight; // precise integer height including borders
-			console.log(`📏 Precise target height: ${targetHeight}px`);
+			content.style.overflow = 'hidden';
+			const targetHeight = content.offsetHeight;
 
-			// 2. RESET TO ZERO
+			// Reset to zero
 			content.style.maxHeight = '0';
 			// eslint-disable-next-line no-unused-expressions
-			content.offsetHeight; // Force reflow to lock in '0'
-
-			const rafTime = performance.now();
-			console.log(`⏱️  Time before RAF: ${(rafTime - startTime).toFixed(2)}ms`);
+			content.offsetHeight; // Force reflow
 
 			requestAnimationFrame(() => {
-				const animStartTime = performance.now();
-				console.log(`🎬 RAF fired at ${(animStartTime - startTime).toFixed(2)}ms`);
-
+				// Animate to target height
 				content.style.transition = `max-height ${dur}s ${s.easing}`;
 				content.style.maxHeight = targetHeight + 'px';
-				console.log(`📈 Set maxHeight to ${targetHeight}px`);
 
-				// Start fade-in animation SIMULTANEOUSLY with height expand
+				// Fade in children only if contentFade is enabled
 				if (s.contentFade && !instant) {
-					console.log('✨ Fading in children');
 					this._fadeInChildren(content, s);
-				} else {
-					// Force opacity 1 if fade is off, just in case
-					children.forEach((child) => {
-						child.style.setProperty('opacity', '1', 'important');
-						child.style.setProperty('transform', 'none', 'important');
-						child.style.setProperty('transition', 'none', 'important');
-					});
 				}
-
 			});
 
-			// After transition completes, remove maxHeight so content can
-			// resize naturally (e.g. images loading, dynamic content).
+			// Cleanup after transition
 			const onEnd = (e) => {
-				// Only trigger on max-height transition, not child transitions
-				if (e && e.propertyName !== 'max-height') {
-					console.log(`⏭️  Ignoring transitionend for: ${e.propertyName}`);
-					return;
-				}
-				const endTime = performance.now();
-				console.log(`✅ Transition complete at ${(endTime - startTime).toFixed(2)}ms`);
-
+				if (e && e.propertyName !== 'max-height') return;
 				content.style.maxHeight = 'none';
-				// content.style.overflow = ''; // REMOVED: Keep overflow hidden for stability
 				content.removeEventListener('transitionend', onEnd);
-				console.log('🧹 Cleanup done');
-
-				console.groupEnd();
 			};
+
 			if (dur > 0) {
 				content.addEventListener('transitionend', onEnd);
 			} else {
-				console.log('⚡ Instant open (duration = 0)');
 				content.style.maxHeight = 'none';
-				// content.style.overflow = ''; // REMOVED: Keep overflow hidden for stability
-				console.groupEnd();
-
 			}
 		}
 
 		/* ── Close an item ────────────────────────────────────── */
 
 		_closeItem(item) {
-			console.group('🔴 CLOSE ITEM');
-			const startTime = performance.now();
-
 			const toggle = item.querySelector('.aa-toggle-button');
 			const content = item.querySelector('.wp-block-accordion-content');
-			if (!toggle || !content) {
-				console.warn('Missing toggle or content');
-				console.groupEnd();
-				return;
-			}
+			if (!toggle || !content) return;
+
+			// Prevent double-close
+			if (content.dataset.isClosing === 'true') return;
+			content.dataset.isClosing = 'true';
 
 			const s = this._getSettings(item);
-			console.log('⚙️ Settings:', s);
-
-			// Strict CSS class toggle to enforce no-fade
-			if (!s.contentFade) {
-				content.classList.add('aa-no-fade');
-			} else {
-				content.classList.remove('aa-no-fade');
-			}
-
-			// Remove transitions from children if contentFade is disabled (same as open)
-			const children = Array.from(content.children);
-			console.log(`👶 Found ${children.length} children`);
-
-			if (!s.contentFade) {
-				console.log('🚫 ContentFade OFF - forcing visible');
-				// IMMEDIATE visibility force
-				content.style.setProperty('opacity', '1', 'important');
-				children.forEach((child) => {
-					child.style.setProperty('transition', 'none', 'important');
-					child.style.setProperty('opacity', '1', 'important');
-					child.style.setProperty('transform', 'none', 'important');
-				});
-			}
-
-
-			// 2. PREPARE FOR MEASUREMENT
-			// We MUST set overflow: hidden AND border-box BEFORE measuring height.
-			// This prevents jumping caused by margin collapse differences between
-			// overflow: visible and overflow: hidden.
-			content.style.transition = 'none';
-			content.style.overflow = 'hidden';
-			content.style.boxSizing = 'border-box'; // FIX: Enforce border-box to prevent jump
-			// eslint-disable-next-line no-unused-expressions
-			content.offsetHeight; // Force reflow #1 to apply overflow change
-
-
-			// 3. MEASURE CURRENT HEIGHT
-			// Now that overflow is hidden, this measurement includes any
-			// margin/padding adjustments inherent to that state.
-			const currentHeight = content.getBoundingClientRect().height;
-			console.log(`� Measured height (overflow:hidden): ${currentHeight}px`);
-
-			// 4. LOCK HEIGHT
-			content.style.maxHeight = currentHeight + 'px';
-			// eslint-disable-next-line no-unused-expressions
-			content.offsetHeight; // Force reflow #2 to lock height
-			console.log(`� Locked to ${currentHeight}px`);
-
-
-			const rafTime = performance.now();
-			console.log(`⏱️  Time before RAF: ${(rafTime - startTime).toFixed(2)}ms`);
-
-			requestAnimationFrame(() => {
-				const animStartTime = performance.now();
-				console.log(`🎬 RAF fired at ${(animStartTime - startTime).toFixed(2)}ms`);
-
-				content.style.transition = `max-height ${s.duration}s ${s.easing}`;
-				content.style.maxHeight = '0';
-				console.log(`📉 Set maxHeight to 0, transition: ${s.duration}s ${s.easing}`);
-
-				// Fade out children SIMULTANEOUSLY with height collapse (only if enabled)
-				if (s.contentFade) {
-					console.log('✨ Fading out children');
-					this._fadeOutChildren(content, s);
-				} else {
-					// Ensure they stay visible during collapse
-					children.forEach((child) => {
-						child.style.setProperty('opacity', '1', 'important');
-						child.style.setProperty('transform', 'none', 'important');
-						child.style.setProperty('transition', 'none', 'important');
-					});
-					content.style.setProperty('opacity', '1', 'important');
-				}
-
+			
+			console.log('🔽 Closing accordion item:', {
+				contentFade: s.contentFade,
+				duration: s.duration,
+				fadeDuration: s.fadeDuration,
+				easing: s.easing
 			});
 
-			const onEnd = (e) => {
-				// Only trigger on max-height transition, not child transitions
-				if (e && e.propertyName !== 'max-height') {
-					console.log(`⏭️  Ignoring transitionend for: ${e.propertyName}`);
-					return;
-				}
-				const endTime = performance.now();
-				console.log(`✅ Transition complete at ${(endTime - startTime).toFixed(2)}ms`);
+			// Set CSS custom properties for animations
+			item.style.setProperty('--aa-duration', `${s.duration}s`);
+			item.style.setProperty('--aa-easing', s.easing);
 
+			// Toggle CSS class for no-fade mode
+			if (!s.contentFade) {
+				content.classList.add('aa-no-fade');
+				console.log('✓ Content fade disabled - no fade animation');
+			} else {
+				content.classList.remove('aa-no-fade');
+				console.log('✓ Content fade enabled - will fade out children');
+			}
+
+			// Snapshot current height
+			const currentHeight = content.scrollHeight;
+			console.log('📏 Current height:', currentHeight + 'px');
+
+			// Lock height before animating
+			content.style.transition = 'none';
+			content.style.overflow = 'hidden';
+			content.style.setProperty('max-height', currentHeight + 'px', 'important');
+			console.log('🔒 Locked height:', {
+				setTo: currentHeight + 'px',
+				styleValue: content.style.maxHeight,
+				computedValue: window.getComputedStyle(content).maxHeight,
+				priority: content.style.getPropertyPriority('max-height')
+			});
+			// eslint-disable-next-line no-unused-expressions
+			content.offsetHeight; // Force reflow
+
+			let hasCompleted = false;
+			const cleanup = () => {
+				if (hasCompleted) return;
+				hasCompleted = true;
+
+				console.log('🧹 Cleanup called');
+
+				// Cleanup
 				item.classList.remove('is-open');
 				toggle.setAttribute('aria-expanded', 'false');
 				content.hidden = true;
-				content.style.maxHeight = '0';
+				content.style.maxHeight = '';
 				content.style.transition = '';
-				content.removeEventListener('transitionend', onEnd);
-				console.log('🧹 Cleanup done');
-				console.groupEnd();
+				content.style.overflow = '';
+				content.style.opacity = '';
+
+				// Clear child inline styles only if fade was used
+				if (s.contentFade) {
+					const children = Array.from(content.children);
+					children.forEach((child) => {
+						child.style.transition = '';
+						child.style.opacity = '';
+						child.style.transform = '';
+					});
+				}
+
+				content.dataset.isClosing = 'false';
+				console.log('✅ Close complete');
 			};
 
 			if (s.duration > 0) {
-				content.addEventListener('transitionend', onEnd);
+				let fallbackTimeout;
+				
+				// Debug: listen to ALL transitionend events
+				const debugHandler = (e) => {
+					console.log('🎯 TransitionEnd event (ANY):', {
+						target: e.target.tagName + (e.target.className ? '.' + e.target.className.split(' ').join('.') : ''),
+						propertyName: e.propertyName,
+						isContent: e.target === content,
+						elapsedTime: e.elapsedTime
+					});
+				};
+				content.addEventListener('transitionend', debugHandler, true); // Use capture phase
+				
+				const transitionEndHandler = (e) => {
+					// Only respond to max-height transitions on the content element itself
+					if (e.target !== content || e.propertyName !== 'max-height') return;
+					console.log('⏱️ TransitionEnd fired for max-height - CLEANUP');
+					content.removeEventListener('transitionend', transitionEndHandler);
+					content.removeEventListener('transitionend', debugHandler, true);
+					clearTimeout(fallbackTimeout);
+					cleanup();
+				};
+				
+				content.addEventListener('transitionend', transitionEndHandler);
+				
+				// Fallback timeout in case transitionend doesn't fire
+				fallbackTimeout = setTimeout(() => {
+					console.log('⚠️ Fallback timeout triggered');
+					content.removeEventListener('transitionend', transitionEndHandler);
+					content.removeEventListener('transitionend', debugHandler);
+					cleanup();
+				}, (s.duration * 1000) + 100);
+
+				requestAnimationFrame(() => {
+					console.log('🎬 Starting collapse animation');
+					// Set transition first, then animate to 0
+					content.style.transition = `max-height ${s.duration}s ${s.easing}`;
+					content.style.setProperty('max-height', '0px', 'important');
+					
+					// Check immediately
+					console.log('🔍 Immediately after setting:', {
+						styleMaxHeight: content.style.maxHeight,
+						computedMaxHeight: window.getComputedStyle(content).maxHeight,
+					});
+					
+					// Check after a tiny delay to see if it updates
+					setTimeout(() => {
+						console.log('🔍 After 10ms:', {
+							styleMaxHeight: content.style.maxHeight,
+							computedMaxHeight: window.getComputedStyle(content).maxHeight,
+						});
+					}, 10);
+					
+					setTimeout(() => {
+						console.log('🔍 After 100ms:', {
+							styleMaxHeight: content.style.maxHeight,
+							computedMaxHeight: window.getComputedStyle(content).maxHeight,
+						});
+					}, 100);
+
+					// Fade out children ONLY if contentFade is enabled
+					if (s.contentFade) {
+						console.log('🌫️ Fading out children');
+						this._fadeOutChildren(content, s);
+					}
+				});
 			} else {
 				console.log('⚡ Instant close (duration = 0)');
-				onEnd();
+				content.style.maxHeight = '0px';
+				cleanup();
 			}
 		}
 
@@ -445,10 +432,7 @@
 			const children = Array.from(content.children);
 			children.forEach((child, i) => {
 				const delay = s.stagger * i;
-				// Set transition (children are already at opacity:0 from _openItem)
 				child.style.transition = `opacity ${s.fadeDuration}s ${s.easing} ${delay}ms, transform ${s.fadeDuration}s ${s.easing} ${delay}ms`;
-
-				// Animate to visible state
 				child.style.opacity = '1';
 				child.style.transform = 'translateY(0)';
 			});
@@ -457,7 +441,6 @@
 		_fadeOutChildren(content, s) {
 			const children = Array.from(content.children);
 			children.forEach((child) => {
-				// Use full fadeDuration to match the collapse animation
 				child.style.transition = `opacity ${s.fadeDuration}s ${s.easing}, transform ${s.fadeDuration}s ${s.easing}`;
 				child.style.opacity = '0';
 				child.style.transform = `translateY(-${s.slideDistance}px)`;
@@ -466,10 +449,6 @@
 
 		/* ── Linked group synchronisation ─────────────────────── */
 
-		/**
-		 * Find all accordion-item elements on the entire page that share
-		 * the given groupId and open/close them to match the trigger.
-		 */
 		_syncLinkedGroup(groupId, triggerItem, shouldOpen) {
 			const allLinked = document.querySelectorAll(
 				`.wp-block-accordion-item[data-link-group="${groupId}"]`
@@ -480,8 +459,6 @@
 				const isOpen = linkedItem.classList.contains('is-open');
 
 				if (shouldOpen && !isOpen) {
-					// Find the AdvancedAccordion instance that owns this item
-					// so we can use its resolved settings.
 					this._openItemGlobal(linkedItem);
 				} else if (!shouldOpen && isOpen) {
 					this._closeItemGlobal(linkedItem);
@@ -489,10 +466,6 @@
 			});
 		}
 
-		/**
-		 * Open an item that may belong to a different container instance.
-		 * Falls back to this container's defaults if no instance is found.
-		 */
 		_openItemGlobal(item) {
 			const instance = AdvancedAccordion.instanceForItem(item);
 			if (instance) {
@@ -530,10 +503,7 @@
 					break;
 				case 'ArrowUp':
 					e.preventDefault();
-					next =
-						toggles[
-						(index - 1 + toggles.length) % toggles.length
-						];
+					next = toggles[(index - 1 + toggles.length) % toggles.length];
 					break;
 				case 'Home':
 					e.preventDefault();
@@ -560,13 +530,38 @@
 		_recalcOpenHeights() {
 			this.items.forEach((item) => {
 				if (!item.classList.contains('is-open')) return;
-				const content = item.querySelector(
-					'.wp-block-accordion-content'
-				);
+				const content = item.querySelector('.wp-block-accordion-content');
+				// Don't recalculate if the item is currently closing
+				if (content && content.dataset.isClosing === 'true') return;
 				if (content && content.style.maxHeight !== 'none') {
 					content.style.maxHeight = content.scrollHeight + 'px';
 				}
 			});
+		}
+
+		/* ── Cleanup and destroy ───────────────────────────────── */
+
+		destroy() {
+			// Disconnect ResizeObserver
+			if (this._resizeObserver) {
+				this._resizeObserver.disconnect();
+				this._resizeObserver = null;
+			}
+
+			// Remove keydown listener
+			if (this._keydownHandler) {
+				this.container.removeEventListener('keydown', this._keydownHandler);
+				this._keydownHandler = null;
+			}
+
+			// Remove all click listeners
+			this._listeners.forEach((handler, toggle) => {
+				toggle.removeEventListener('click', handler);
+			});
+			this._listeners.clear();
+
+			// Unregister from instances Map
+			AdvancedAccordion.unregister(this.container);
 		}
 
 		/* ── Static registry ──────────────────────────────────── */
@@ -577,10 +572,10 @@
 			AdvancedAccordion._instances.set(container, instance);
 		}
 
-		/**
-		 * Given an accordion-item element, find the AdvancedAccordion
-		 * instance whose container owns that item.
-		 */
+		static unregister(container) {
+			AdvancedAccordion._instances.delete(container);
+		}
+
 		static instanceForItem(item) {
 			const container = item.closest('.wp-block-advanced-accordion');
 			return container
@@ -597,26 +592,22 @@
 		document
 			.querySelectorAll('.wp-block-advanced-accordion')
 			.forEach((el) => {
-				// Prevent double-initialisation.
 				if (el.dataset.aaInit) return;
 				el.dataset.aaInit = 'true';
-
 				const instance = new AdvancedAccordion(el);
 				AdvancedAccordion.register(el, instance);
 			});
 	}
 
-	// Run on DOMContentLoaded or immediately if the DOM is already ready.
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', init);
 	} else {
 		init();
 	}
 
-	// Also observe DOM mutations so accordions injected later (e.g. via
-	// AJAX, block themes, or the site-editor) are initialised too.
 	const observer = new MutationObserver((mutations) => {
 		for (const mutation of mutations) {
+			// Handle added nodes
 			for (const node of mutation.addedNodes) {
 				if (node.nodeType !== 1) continue;
 				if (node.classList?.contains('wp-block-advanced-accordion')) {
@@ -626,12 +617,29 @@
 						AdvancedAccordion.register(node, instance);
 					}
 				}
-				// Also check descendants.
 				node.querySelectorAll?.('.wp-block-advanced-accordion').forEach((el) => {
 					if (!el.dataset.aaInit) {
 						el.dataset.aaInit = 'true';
 						const instance = new AdvancedAccordion(el);
 						AdvancedAccordion.register(el, instance);
+					}
+				});
+			}
+
+			// Handle removed nodes - cleanup
+			for (const node of mutation.removedNodes) {
+				if (node.nodeType !== 1) continue;
+				if (node.classList?.contains('wp-block-advanced-accordion')) {
+					const instance = AdvancedAccordion._instances.get(node);
+					if (instance) {
+						instance.destroy();
+					}
+				}
+				// Check for nested accordions
+				node.querySelectorAll?.('.wp-block-advanced-accordion').forEach((el) => {
+					const instance = AdvancedAccordion._instances.get(el);
+					if (instance) {
+						instance.destroy();
 					}
 				});
 			}

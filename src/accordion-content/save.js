@@ -5,7 +5,7 @@
  * The frontend script manages visibility and animation.
  */
 
-import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
+import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 
 export default function contentSave({ attributes }) {
 	const { overrideAnimation } = attributes;
@@ -16,7 +16,9 @@ export default function contentSave({ attributes }) {
 		'data-override-animation': overrideAnimation ? 'true' : 'false',
 	});
 
-	const innerBlocksProps = useInnerBlocksProps.save(blockProps);
-
-	return <div {...innerBlocksProps} />;
+	return (
+		<div {...blockProps}>
+			<InnerBlocks.Content />
+		</div>
+	);
 }

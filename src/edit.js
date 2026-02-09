@@ -23,6 +23,7 @@ import {
 } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useCallback } from '@wordpress/element';
+import { createBlock } from '@wordpress/blocks';
 
 /**
  * Template inserted when the accordion starts empty.
@@ -74,6 +75,8 @@ export default function ContainerEdit( { attributes, setAttributes, clientId } )
 		'data-allow-multiple': allowMultipleOpen ? 'true' : 'false',
 	} );
 
+	const { insertBlock } = useDispatch( 'core/block-editor' );
+
 	const innerBlocksProps = useInnerBlocksProps( blockProps, {
 		allowedBlocks: ALLOWED_BLOCKS,
 		template: TEMPLATE,
@@ -82,8 +85,6 @@ export default function ContainerEdit( { attributes, setAttributes, clientId } )
 				<button
 					className="aa-appender-button"
 					onClick={ () => {
-						const { insertBlock } = useDispatch( 'core/block-editor' );
-						const { createBlock } = require( '@wordpress/blocks' );
 						const newItem = createBlock( 'asuspended/accordion-item', {}, [
 							createBlock( 'asuspended/accordion-toggle', { heading: 'New Item' } ),
 							createBlock( 'asuspended/accordion-content', {}, [

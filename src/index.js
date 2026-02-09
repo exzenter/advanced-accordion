@@ -29,10 +29,11 @@ import toggleSave from './accordion-toggle/save';
 import contentMeta from './accordion-content/block.json';
 import ContentEdit from './accordion-content/edit';
 import contentSave from './accordion-content/save';
+import contentDeprecated from './accordion-content/deprecated';
 
 /* ── Styles ─────────────────────────────────────────────────────── */
-import './style.scss';
-import './editor.scss';
+import './editor.scss'; // Editor-only styles (via editorStyle in block.json)
+import './style.scss';  // Frontend + Editor styles (via style in block.json)
 
 /* ================================================================
  * Register blocks
@@ -145,4 +146,5 @@ registerBlockType( contentMeta.name, {
 	...contentMeta,
 	edit: ContentEdit,
 	save: contentSave,
+	deprecated: contentDeprecated,
 } );

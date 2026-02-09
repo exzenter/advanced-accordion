@@ -171,11 +171,6 @@ div.wp-block-accordion-content {
 	pointer-events: auto;
 }
 
-.wp-block-accordion-content>* {
-	padding-left: 20px;
-	padding-right: 20px;
-}
-
 .wp-block-accordion-content>*:first-child {
 	padding-top: 0;
 }
@@ -192,13 +187,13 @@ div.wp-block-accordion-content {
 
 	.wp-block-accordion-content,
 	.aa-toggle-icon {
-		transition: none !important;
+		transition: none ;
 	}
 
 	.wp-block-accordion-content>* {
-		transition: none !important;
-		opacity: 1 !important;
-		transform: none !important;
+		transition: none ;
+		opacity: 1 ;
+		transform: none ;
 	}
 }
 
@@ -233,13 +228,15 @@ div.wp-block-accordion-content {
 
 /* Ensure content stays visible if fade is disabled (overrides theme/inline styles) */
 .wp-block-accordion-content.aa-no-fade {
-	opacity: 1 !important;
+	opacity: 1 ;
+	/* Explicitly prevent any opacity/transform transitions on the content wrapper */
+	transition: max-height var(--aa-duration) var(--aa-easing);
 }
 
-
-
 .wp-block-accordion-content.aa-no-fade * {
-	opacity: 1 !important;
-	transition: none !important;
-	transform: none !important;
+	opacity: 1 ;
+	transition: none ;
+	transform: none ;
+	/* Override any theme-level transitions (like WordPress 2025) */
+	animation: none ;
 }
