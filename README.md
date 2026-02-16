@@ -1,5 +1,7 @@
 # Advanced Accordion – WordPress Block Plugin
 
+[https://exzent.de](https://exzent.de)
+
 An advanced accordion block for WordPress with linked groups, per-item animation overrides, full keyboard navigation, and ARIA accessibility.
 
 ## Requirements

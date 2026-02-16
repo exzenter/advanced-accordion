@@ -229,8 +229,8 @@
 
 			// Only manipulate children if fade is enabled
 			if (s.contentFade && !instant) {
-				const children = Array.from(content.children);
-				children.forEach((child) => {
+				const elements = this._getAnimatableElements(content);
+				elements.forEach((child) => {
 					child.style.opacity = '0';
 					child.style.transform = `translateY(${s.slideDistance}px)`;
 				});
@@ -340,8 +340,8 @@
 
 				// Clear child inline styles only if fade was used
 				if (s.contentFade) {
-					const children = Array.from(content.children);
-					children.forEach((child) => {
+					const elements = this._getAnimatableElements(content);
+					elements.forEach((child) => {
 						child.style.transition = '';
 						child.style.opacity = '';
 						child.style.transform = '';
@@ -429,8 +429,9 @@
 		/* ── Content fade helpers ─────────────────────────────── */
 
 		_fadeInChildren(content, s) {
-			const children = Array.from(content.children);
-			children.forEach((child, i) => {
+			// Get all descendants that should be animated (direct children + nested list items)
+			const elements = this._getAnimatableElements(content);
+			elements.forEach((child, i) => {
 				const delay = s.stagger * i;
 				child.style.transition = `opacity ${s.fadeDuration}s ${s.easing} ${delay}ms, transform ${s.fadeDuration}s ${s.easing} ${delay}ms`;
 				child.style.opacity = '1';
@@ -439,12 +440,42 @@
 		}
 
 		_fadeOutChildren(content, s) {
-			const children = Array.from(content.children);
-			children.forEach((child) => {
+			// Get all descendants that should be animated (direct children + nested list items)
+			const elements = this._getAnimatableElements(content);
+			elements.forEach((child) => {
 				child.style.transition = `opacity ${s.fadeDuration}s ${s.easing}, transform ${s.fadeDuration}s ${s.easing}`;
 				child.style.opacity = '0';
 				child.style.transform = `translateY(-${s.slideDistance}px)`;
 			});
+		}
+
+		/**
+		 * Get elements that should be animated with stagger effect.
+		 * Includes direct children and nested list items (li).
+		 */
+		_getAnimatableElements(content) {
+			const elements = [];
+			
+			// Add direct children
+			Array.from(content.children).forEach((child) => {
+				// Check if this child contains a list (ul or ol)
+				const lists = child.querySelectorAll('ul, ol');
+				
+				if (lists.length > 0) {
+					// If it contains lists, animate the list items instead of the parent
+					lists.forEach((list) => {
+						const listItems = Array.from(list.children).filter(
+							(item) => item.tagName === 'LI'
+						);
+						elements.push(...listItems);
+					});
+				} else {
+					// No lists, animate the direct child
+					elements.push(child);
+				}
+			});
+			
+			return elements;
 		}
 
 		/* ── Linked group synchronisation ─────────────────────── */

@@ -1,12 +1,13 @@
 <?php
 /**
  * Plugin Name:       Advanced Accordion
- * Plugin URI:        https://example.com/advanced-accordion
+ * Plugin URI:        https://exzent.de/plugins/
  * Description:       An advanced accordion block with linked groups, animation controls, keyboard navigation, and full accessibility support.
  * Version:           1.0.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:
+ * Author:            EXZENT
+ * Author URI:        https://exzent.de
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       advanced-accordion
